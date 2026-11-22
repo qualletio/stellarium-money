@@ -20,11 +20,11 @@ All resources are found under the `sh.stellarium.money` path.
 
 ### Account
 
-The balance of the contract that calls it. Every contract version has one, kept by the operator. Contracts receive money when callers attach it to a call, naming who it may be paid to, and spend it with `Account`:
+The balance of the contract that calls it. Every contract version has one, kept by the operator. Contracts receive money when callers attach it to a call to one of their `pub payable fn`s, naming who it may be paid to, and spend it with `Account`:
 
 ```
 const job: com.example.Job@1
-job.run{amount: 20000000, payees: ["org_courier"]}(...)
+job.fund{amount: 20000000, payees: ["org_courier"]}(...)
 ```
 
 - **Only contracts can call `Account`,** and only for their own balance. A request script's calls fail.
@@ -86,17 +86,19 @@ Keys are optional and default to `null`.
 
 ## Example
 
-A buyer pays for a dataset, split between its author and its host. The buyer names both as payees: `split.run{amount: 1000000, payees: ["org_author", "org_data"]}()`.
+A buyer pays for a dataset, split between its author and its host. The buyer names both as payees: `split.split{amount: 1000000, payees: ["org_author", "org_data"]}()`.
 
 ```
-payable contract com.example.Split: int64 {
+contract com.example.Split {
     const account: sh.stellarium.money.Account
 
-    const author = payment.amount * 70 / 100
-    account.pay(to: "org_author", amount: author, from: payment.from)
-    account.pay(to: "org_data", amount: payment.amount - author, from: payment.from)
+    pub payable fn split(): int64 {
+        const author = payment.amount * 70 / 100
+        account.pay(to: "org_author", amount: author, from: payment.from)
+        account.pay(to: "org_data", amount: payment.amount - author, from: payment.from)
 
-    return payment.amount
+        return payment.amount
+    }
 }
 ```
 
